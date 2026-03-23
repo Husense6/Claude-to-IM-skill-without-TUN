@@ -6,6 +6,25 @@
 >
 > **修复：** 在 daemon 启动时，对 undici 全局 dispatcher 和 ws.WebSocket 构造函数进行 monkey-patch，自动注入代理 agent。同时将 `ws`、`undici`、`https-proxy-agent` 标记为 esbuild external，确保运行时 patch 的是同一份模块实例。
 
+### 安装（替换原版）
+
+如果你已安装原版，先删除再安装本 fork：
+
+```bash
+rm -rf ~/.claude/skills/claude-to-im
+git clone https://github.com/Husense6/Claude-to-IM-skill-without-TUN.git ~/.claude/skills/claude-to-im
+cd ~/.claude/skills/claude-to-im && npm install
+```
+
+如果是全新安装：
+
+```bash
+git clone https://github.com/Husense6/Claude-to-IM-skill-without-TUN.git ~/.claude/skills/claude-to-im
+cd ~/.claude/skills/claude-to-im && npm install
+```
+
+安装完成后在 Claude Code 中运行 `/claude-to-im setup` 进行配置。
+
 ---
 
 Bridge Claude Code / Codex to IM platforms — chat with AI coding agents from Telegram, Discord, Feishu/Lark, or QQ.
