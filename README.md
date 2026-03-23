@@ -13,14 +13,12 @@
 ```bash
 rm -rf ~/.claude/skills/claude-to-im
 git clone https://github.com/Husense6/Claude-to-IM-skill-without-TUN.git ~/.claude/skills/claude-to-im
-cd ~/.claude/skills/claude-to-im && npm install
 ```
 
 如果是全新安装：
 
 ```bash
 git clone https://github.com/Husense6/Claude-to-IM-skill-without-TUN.git ~/.claude/skills/claude-to-im
-cd ~/.claude/skills/claude-to-im && npm install
 ```
 
 安装完成后在 Claude Code 中运行 `/claude-to-im setup` 进行配置。
