@@ -15,6 +15,8 @@ await esbuild.build({
     '@openai/codex-sdk',
     // discord.js optional native deps
     'bufferutil', 'utf-8-validate', 'zlib-sync', 'erlpack',
+    // ws + proxy support — must stay external so runtime proxy patching works
+    'ws', 'undici', 'https-proxy-agent',
     // Node.js built-ins
     'fs', 'path', 'os', 'crypto', 'http', 'https', 'net', 'tls',
     'stream', 'events', 'url', 'util', 'child_process', 'worker_threads',

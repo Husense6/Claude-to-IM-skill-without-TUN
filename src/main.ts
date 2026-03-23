@@ -7,6 +7,66 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+// ── Proxy setup (must run before any network-using imports) ──
+// discord.js's REST (undici) and WebSocket (ws) do not automatically
+// respect HTTP_PROXY/HTTPS_PROXY env vars. Patch them here.
+const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.https_proxy || process.env.http_proxy;
+if (proxyUrl) {
+  console.log(`[claude-to-im] Proxy enabled: ${proxyUrl} (HTTP)`);
+
+  // 1. Patch undici global dispatcher for REST API calls
+  try {
+    const undici = await import('undici');
+    undici.setGlobalDispatcher(new undici.ProxyAgent(proxyUrl));
+    console.log('[claude-to-im] undici global dispatcher patched for proxy');
+  } catch (e) {
+    console.warn('[claude-to-im] Failed to patch undici proxy:', e instanceof Error ? e.message : e);
+  }
+
+  // 2. Patch ws.WebSocket to inject proxy agent for WebSocket connections.
+  //    ws is external (not bundled by esbuild), so require('ws') returns
+  //    the actual CJS module which is mutable. discord.js (also via require)
+  //    will pick up the patched WebSocket constructor.
+  try {
+    const { HttpsProxyAgent } = await import('https-proxy-agent');
+    const nodeMod = await import('node:module');
+    const cjsReq = nodeMod.createRequire(import.meta.url);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const wsModule = cjsReq('ws') as any;
+    const OrigWS = wsModule.WebSocket;
+    if (OrigWS) {
+      const agent = new HttpsProxyAgent(proxyUrl);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const PatchedWS = function (address: any, protocols?: any, options?: any) {
+        if (typeof protocols === 'object' && !Array.isArray(protocols)) {
+          options = protocols;
+          protocols = undefined;
+        }
+        options = options || {};
+        if (!options.agent) {
+          options.agent = agent;
+        }
+        if (protocols) {
+          return new OrigWS(address, protocols, options);
+        }
+        return new OrigWS(address, options);
+      };
+      PatchedWS.prototype = OrigWS.prototype;
+      Object.setPrototypeOf(PatchedWS, OrigWS);
+      for (const key of Object.getOwnPropertyNames(OrigWS)) {
+        if (key !== 'prototype' && key !== 'length' && key !== 'name') {
+          try { (PatchedWS as unknown as Record<string, unknown>)[key] = OrigWS[key]; } catch { /* skip read-only */ }
+        }
+      }
+      wsModule.WebSocket = PatchedWS;
+      console.log('[claude-to-im] ws.WebSocket patched for proxy');
+    }
+  } catch (e) {
+    console.warn('[claude-to-im] Failed to patch ws proxy:', e instanceof Error ? e.message : e);
+  }
+
+  console.log('[claude-to-im] fetch() proxy patched');
+}
 
 import { initBridgeContext } from 'claude-to-im/src/lib/bridge/context.js';
 import * as bridgeManager from 'claude-to-im/src/lib/bridge/bridge-manager.js';
