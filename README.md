@@ -1,4 +1,12 @@
-# Claude-to-IM Skill
+# Claude-to-IM Skill (Proxy Fix)
+
+> **Fork 说明：** 本仓库 fork 自 [op7418/Claude-to-IM-skill](https://github.com/op7418/Claude-to-IM-skill)，修复了在非 TUN 模式代理环境下 Discord 适配器无法连接的问题。
+>
+> **问题：** discord.js 的 REST 客户端（undici）和 WebSocket 客户端（ws）不会自动读取 `HTTP_PROXY` / `HTTPS_PROXY` 环境变量，导致在仅配置了系统代理（如 mihomo 规则模式）而未开启 TUN 的环境下，Discord 连接超时（`ConnectTimeoutError`）。
+>
+> **修复：** 在 daemon 启动时，对 undici 全局 dispatcher 和 ws.WebSocket 构造函数进行 monkey-patch，自动注入代理 agent。同时将 `ws`、`undici`、`https-proxy-agent` 标记为 esbuild external，确保运行时 patch 的是同一份模块实例。
+
+---
 
 Bridge Claude Code / Codex to IM platforms — chat with AI coding agents from Telegram, Discord, Feishu/Lark, or QQ.
 
